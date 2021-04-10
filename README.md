@@ -1,3 +1,4 @@
+This repository contains the SPARQL queries and Lisp code for the CODO ontology which can be found at: https://bioportal.bioontology.org/ontologies/CODO  The SPARQL queries are in text files and consist of common queries that can be used to analyze the data. They can be run on any SPARQL 1.1 compliant engine. There are also SPARQL queries that transform the data but those are wrapped in Lisp functions (so that severaly SPARQL transformations can be run at once). 
 # CODO-Lisp
 Lisp files for the CODO Covid-19 Ontology
 1.	Configuring Lisp to Access Allegrograph: Before you run the Lisp files you need to configure your Lisp environment to work with the Allegrograph server. Make sure the Allegrograph server is running and is accessible from your Lisp client. In my environment I first run Allegrograph in Docker and then navigate to: a localhost address in Chrome. 

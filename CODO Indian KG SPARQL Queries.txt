@@ -1,0 +1,143 @@
+#SPARQL queries for the CODO ontology 
+#These are all just queries and will not change the 
+#knowledge graph. See the Lisp files
+#for the SPARQL queries that transform the data
+#These are all queries that apply to the specific instantiation
+#of the Vocabulary with A-Box data from India. 
+#See CODO Vocabulary files for SPARQL queries that apply to all data sets
+#All queries should begin with the following namespaces:
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX codo: <http://www.isibang.ac.in/ns/codo#>
+PREFIX schema: <https://schema.org/>
+PREFIX t: <http://franz.com/ns/allegrograph/3.0/temporal/>
+
+		
+#Find all who have a clusterString defined (not yet processed)
+SELECT ?p ?cs
+WHERE {?p codo:clusterString ?cs}
+
+
+#Find all who have a reasonString defined (not yet processed)
+SELECT ?p ?rs
+WHERE {?p codo:reasonString ?rs}
+
+#Find all who have a reasonString set to "unknown"
+SELECT ?p 
+WHERE {?p codo:reasonString "unknown"}
+
+#Find all who have a reasonString that includes "Contact"
+#Used to debug a problem with the transformations
+SELECT ?p ?rs
+WHERE {?p codo:reasonString ?rs.
+		FILTER(CONTAINS(?rs, "Contact"))}
+		
+#Find all who have a cityString not processed
+#Used to debug the transformations
+SELECT ?p ?cs
+WHERE {?p codo:cityString ?cs.}
+		
+#Find reasonString with numbers (patient IDs)		
+SELECT ?p ?rs
+WHERE {?p codo:reasonString ?rs.
+		FILTER(REGEX(?rs, "\\d+"))}
+		
+#Find reasonString with hasID number sequences
+#Where second number not prefaced by P	
+SELECT ?p ?rs
+WHERE {?p codo:reasonString ?rs.
+		FILTER(REGEX(?rs, "\\d+-\\d+"))}
+		
+#Find reasonString with hasID number sequences
+#Where second number is prefaced by P	
+SELECT ?p ?rs
+WHERE {?p codo:reasonString ?rs.
+		FILTER(REGEX(?rs, "\\d+-P\\d+"))}
+
+#Find all patients with a releasedOn date
+SELECT ?p ?outstr		
+WHERE {?p codo:outdateString ?outstr.}
+		
+#Find all patients with a releasedOn date
+SELECT ?p ?rd
+WHERE {?p codo:releasedOn ?rd.}
+	
+#Count patients in each cluser 
+#Note: Left out cluster June-29TraceHistoryAbsentCluster as it has no members
+#in current data set and this causes an error. It would be best to first 
+#test to see if there is at least one member of a cluster and if not assign it a default of 0
+#that way could test for all clusters, including ones that might be missing from current data
+SELECT ?mept ?uspt ?sapt ?rept ?sspt ?tjpt ?gpt ?mpt ?rpt ?hapt ?itpt ?ukpt
+       ?ocpt ?unpt ?sarpt ?ipt ?czpt ?t27pt ?t28pt  ?sgpt ?pct  
+WHERE {{SELECT (COUNT(?mep) AS ?mept)
+		WHERE {codo:MiddleEastCluster codo:hasMember ?mep.}}
+		{SELECT (COUNT(?usp) AS ?uspt)
+		WHERE {codo:USACluster codo:hasMember ?usp.}}
+		{SELECT (COUNT(?sap) AS ?sapt)
+		WHERE {codo:SouthAmericaCluster codo:hasMember ?sap.}}
+		{SELECT (COUNT(?rep) AS ?rept)
+		WHERE {codo:RestOfEuropeCluster codo:hasMember ?rep.}}
+		{SELECT (COUNT(?ssp) AS ?sspt)
+		WHERE {codo:SouthernStatesCluster codo:hasMember ?ssp.}}
+		{SELECT (COUNT(?tjp) AS ?tjpt)
+		WHERE {codo:TJCongregation13thTo18thCluster codo:hasMember ?tjp.}}
+		{SELECT (COUNT(?gp) AS ?gpt)
+		WHERE {codo:GujaratCluster codo:hasMember ?gp.}}
+		{SELECT (COUNT(?mp) AS ?mpt)
+		WHERE {codo:MaharashtraCluster codo:hasMember ?mp.}}
+		{SELECT (COUNT(?rp) AS ?rpt)
+		WHERE {codo:RajasthanCluster codo:hasMember ?rp.}}
+		{SELECT (COUNT(?hap) AS ?hapt)
+		WHERE {codo:DomesticTravelHistoryAbsentCluster codo:hasMember ?hap.}}
+		{SELECT (COUNT(?itp) AS ?itpt)
+		WHERE {codo:InternationalTravelHistoryAbsentCluster codo:hasMember ?itp.}}
+		{SELECT (COUNT(?ukp) AS ?ukpt)
+		WHERE {codo:UnitedKingdomCluster codo:hasMember ?ukp.}}
+		{SELECT (COUNT(?ocp) AS ?ocpt)
+		WHERE {codo:OthersCluster codo:hasMember ?ocp.}}
+		{SELECT (COUNT(?unp) AS ?unpt)
+		WHERE {codo:UnknownCluster codo:hasMember ?unp.}}
+		{SELECT (COUNT(?sarp) AS ?sarpt)
+		WHERE {codo:SevereAcuteRespiratoryInfectionCluster codo:hasMember ?sarp.}}
+		{SELECT (COUNT(?ip) AS ?ipt)
+		WHERE {codo:InfluenzaLikeIllnessCluster codo:hasMember ?ip.}}
+		{SELECT (COUNT(?czp) AS ?czpt)
+		WHERE {codo:ContainmentZonesCluster codo:hasMember ?czp.}}
+		{SELECT (COUNT(?t27p) AS ?t27pt)
+		WHERE {codo:June-27TraceHistoryAbsentCluster codo:hasMember ?t27p.}}
+		{SELECT (COUNT(?t28p) AS ?t28pt)
+		WHERE {codo:June-28TraceHistoryAbsentCluster codo:hasMember ?t28p.}}
+		{SELECT (COUNT(?sgp) AS ?sgpt)
+		WHERE {codo:SecondGenerationContactAbsentCluster codo:hasMember ?sgp.}}
+		{SELECT (COUNT(?pcp) AS ?pct)
+		WHERE {codo:PharmaceuticalCompanyInNanjangudCluster codo:hasMember ?pcp.}}}
+
+		
+#Create a property used for testing check to make sure it doesn't already exist
+#This is used by the Lisp function enable-test-mode
+INSERT  {
+	codo:reasonStringTD a owl:DatatypeProperty ;
+	rdfs:subPropertyOf owl:topDataProperty ;
+	rdfs:range xsd:string ;
+	rdfs:label "reason string TD" .
+	}
+WHERE {
+	?tdlabel rdfs:label "reason string TD".
+	OPTIONAL{?tdlabel rdfs:label "reason string TD".}
+	FILTER(!bound(?tdlabel))}
+
+#Delete test data
+DELETE DATA {?p codo:reasonStringTD ?rstd.}
+
+#Delete test property
+#This is used by the Lisp function disable-test-mode
+DELETE DATA  {
+	codo:reasonStringTD a owl:DatatypeProperty ;
+	rdfs:subPropertyOf owl:topDataProperty ;
+	rdfs:range xsd:string ;
+	rdfs:label "reason string TD" .
+	}	
+	
+			
+

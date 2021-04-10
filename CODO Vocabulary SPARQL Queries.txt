@@ -1,0 +1,326 @@
+#SPARQL queries for the CODO ontology
+#These are all just queries and will not change the 
+#knowledge graph. See the Lisp files
+#for the SPARQL queries that transform the data
+#These are generic queries that are independent of any data set
+#All queries should begin with the following namespaces:
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX codo: <http://www.isibang.ac.in/ns/codo#>
+PREFIX schema: <https://schema.org/>
+PREFIX t: <http://franz.com/ns/allegrograph/3.0/temporal/>
+
+
+#Find all instance of the class ExposureToCOVID-19
+SELECT ?e 
+WHERE {?e a codo:ExposureToCOVID-19}
+
+#Find all instance of the class Patient
+#Note: usually best to use limits as this will be large
+SELECT ?p 
+WHERE {?p rdf:type schema:Patient}
+
+#Find all people diagnosed with Covid
+SELECT ?p 
+WHERE {?p a codo:DiagnosedWithCovid.}
+
+#Find all people diagnosed with Covid who are in family relations
+SELECT ?p 
+WHERE {?p a codo:DiagnosedWithCovid.
+	?p codo:hasFamilyRelationship ?r.}
+
+#Find people with family relations 2 or more levels deep	
+SELECT DISTINCT ?p ?p1 ?p2 
+WHERE {?p codo:hasFamilyRelationship ?p1.
+	?p1 codo:hasFamilyRelationship ?p2.}
+	
+#Find all patients where it is known who they contracted the 
+#virus from and find the patient the contracted from
+SELECT ?p ?h 
+WHERE {?p codo:contractedVirusFrom ?h.}
+	
+#Find all instances of Person and Patient
+SELECT * 
+WHERE {{?pt a schema:Patient.}  UNION {?p a foaf:Person.}}
+	
+#Give the travel history of a patient
+#Note: this will give the travel history for all patients
+#To get the history for one patient, simply replace
+#the wildcard ?p with the name of a patient (e.g., codo:P000001)
+SELECT ?p ?tf ?tt
+WHERE {?p rdf:type schema:Patient.
+	?p codo:travelledFrom ?tf.
+	?p codo:travelledTo ?tt.}
+	
+#Gives all the patients who have contracted the virus from another	
+SELECT ?p ?sh
+WHERE {?p codo:contractedVirusFrom ?sh.}	
+
+#Gives all the patients who have contracted the virus from 2 (or more) possible patients	
+SELECT ?p ?sh1 ?sh2
+WHERE {?p codo:contractedVirusFrom ?sh1.
+	?p codo:contractedVirusFrom ?sh2.
+	FILTER(?sh1 != ?sh2)}
+	
+#Gives all the patients who have passed the virus to 2 (or more) possible patients	
+SELECT ?sh ?p1 ?p2
+WHERE {?sh codo:passedVirusTo ?p1.
+	?sh codo:passedVirusTo ?p2.
+	FILTER(?p1 != ?p2)}
+	
+#Find chains of patients with length 3	
+SELECT DISTINCT ?p ?sh1 ?sh2 ?sh3
+WHERE {?p codo:contractedVirusFrom ?sh1.
+	?sh1 codo:contractedVirusFrom ?sh2.
+	?sh2 codo:contractedVirusFrom ?sh3.}
+	
+#Find chains of patients with length 5		
+SELECT DISTINCT ?p ?sh1 ?sh2 ?sh3 ?sh4 ?sh5
+WHERE {?p codo:contractedVirusFrom ?sh1.
+	?sh1 codo:contractedVirusFrom ?sh2.
+	?sh2 codo:contractedVirusFrom ?sh3.
+	?sh3 codo:contractedVirusFrom ?sh4.
+    ?sh4 codo:contractedVirusFrom ?sh5.}
+	
+#Find chains of patients with length 5	
+#As well as any cities they have travelled to	
+SELECT *
+WHERE {?p codo:contractedVirusFrom ?sh1.
+	?sh1 codo:contractedVirusFrom ?sh2.
+	?sh2 codo:contractedVirusFrom ?sh3.
+	?sh3 codo:contractedVirusFrom ?sh4.
+    ?sh4 codo:contractedVirusFrom ?sh5.
+	?p codo:travelledTo ?pl1.
+    ?sh1 codo:travelledFrom ?pl2.	
+	?sh2 codo:travelledFrom ?pl3.
+	?sh3 codo:travelledFrom ?pl4.
+	?sh4 codo:travelledFrom?pl5.
+	?sh5 codo:travelledFrom ?pl6.
+OPTIONAL
+    {?p codo:travelledFrom ?pl1.
+    ?sh1 codo:travelledFrom ?pl2.	
+	?sh2 codo:travelledFrom ?pl3.
+	?sh3 codo:travelledFrom ?pl4.
+	?sh4 codo:travelledFrom ?pl5.
+	?sh5 codo:travelledFrom ?pl6.}
+	}
+
+
+SELECT *
+WHERE {?p codo:contractedVirusFrom ?sh1.
+	?sh1 codo:contractedVirusFrom ?sh2.
+	?sh2 codo:contractedVirusFrom ?sh3.
+	?sh3 codo:contractedVirusFrom ?sh4.
+    ?sh4 codo:contractedVirusFrom ?sh5.
+	?p codo:hasDisease ?d1.
+    ?sh1 codo:hasDisease ?d2.	
+	?sh2 codo:hasDisease ?d3.
+	?sh3 codo:hasDisease ?d4.
+	?sh4 codo:hasDisease ?d5.
+	?sh5 codo:hasDisease ?d6.
+OPTIONAL
+    {?p codo:hasDisease ?d1.
+    ?sh1 codo:hasDisease ?d2.	
+	?sh2 codo:hasDisease ?d3.
+	?sh3 codo:hasDisease ?d4.
+	?sh4 codo:hasDisease ?d5.
+	?sh5 codo:hasDisease ?d6.}
+	}
+	
+#Find chains of patients with length 5	
+#As well as any cities they have travelled to	
+SELECT DISTINCT *
+WHERE {
+	?p codo:travelledFrom ?pl1.
+    ?sh1 codo:travelledFrom ?pl2.	
+	?sh2 codo:travelledFrom ?pl3.
+	?sh3 codo:travelledFrom ?pl4.
+	?sh4 codo:travelledFrom?pl5.
+	?sh5 codo:travelledFrom ?pl6.
+OPTIONAL
+    {?p codo:travelledFrom ?pl1.
+    ?sh1 codo:travelledFrom ?pl2.	
+	?sh2 codo:travelledFrom ?pl3.
+	?sh3 codo:travelledFrom ?pl4.
+	?sh4 codo:travelledFrom ?pl5.
+	?sh5 codo:travelledFrom ?pl6.}
+	}  
+	
+#Find chains of patients with length 5	
+#As well as their disease objects	
+SELECT DISTINCT *
+WHERE {
+	?p codo:travelledFrom ?pl1.
+    ?sh1 codo:travelledFrom ?pl2.	
+	?sh2 codo:travelledFrom ?pl3.
+	?sh3 codo:travelledFrom ?pl4.
+	?sh4 codo:travelledFrom?pl5.
+	?sh5 codo:travelledFrom ?pl6.
+OPTIONAL
+    {?p codo:travelledFrom ?pl1.
+    ?sh1 codo:travelledFrom ?pl2.	
+	?sh2 codo:travelledFrom ?pl3.
+	?sh3 codo:travelledFrom ?pl4.
+	?sh4 codo:travelledFrom ?pl5.
+	?sh5 codo:travelledFrom ?pl6.}
+	}
+	
+	
+#Give all patients where we know the reason they caught the virus
+SELECT ?p ?r
+WHERE {?p codo:suspectedReasonOfCatchingCovid-19 ?r.}
+
+#Find all clusters and the patients in them
+SELECT  ?cl ?p
+WHERE{?cl codo:hasMember ?p}
+
+#Find patients that are not assigned to a cluster
+SELECT  ?p
+WHERE{?p a schema:Patient.
+	OPTIONAL{?p codo:isMemberOf ?cl.}
+	FILTER(!bound(?cl))
+	}
+	
+#Find all triples that are test data
+SELECT ?td ?p ?o 
+WHERE {?td a codo:TestData.
+		?td ?p ?o.}
+		
+#Check for patients with the same hasID
+SELECT ?p1 ?p2 ?id1
+WHERE 
+	{?p1 codo:hasID ?id1.
+	?p2 codo:hasID ?id2.
+	FILTER(?p1 != ?p2 && ?id1 = ?id2)}
+	
+#List the number of values for each property
+SELECT ?p (COUNT(?p) AS ?pCount)
+WHERE
+{?s ?p ?o .}
+GROUP BY ?p
+
+#Count all the patients
+SELECT (COUNT(?p) AS ?pCount)
+WHERE {?p a schema:Patient.}
+
+#List all the patients where we know their city
+SELECT ?p ?city
+WHERE {?p codo:hasCity ?city.}
+ORDER BY ?city
+
+#List all the cities   
+SELECT  ?city
+WHERE {?city a codo:City.}
+ORDER BY ?city
+
+#List all cities where we know the state and country
+SELECT DISTINCT ?city ?state ?country
+WHERE {?city a codo:City.
+	   ?city codo:hasState ?state.
+	   ?state codo:hasCountry ?country.}
+ORDER BY ?city
+
+#List all cities where we know the country
+SELECT DISTINCT ?city ?country
+WHERE {?city a codo:City.
+	   ?city codo:hasCountry ?country.}
+ORDER BY ?city
+
+#Count number of towns	   
+SELECT ?tcount
+WHERE {{SELECT (COUNT(?town) AS ?tcount)
+		WHERE {?town a codo:town.}}}
+		
+#List all the patients under 10 years of age
+#This can of course be modified for any age range
+SELECT ?p
+WHERE {?p a schema:Patient; codo:age ?age.
+		FILTER(?age < 10)}
+
+#List all the patients between 18 and 30
+#To find different range just change numbers in FILTER 		
+SELECT ?p ?age
+WHERE {?p a schema:Patient; codo:age ?age.
+	FILTER(30 <= ?age && ?age >= 18)}
+
+		
+#Count the number of patients in age groups		
+SELECT ?p10count ?p20count ?p30count ?p40count ?p50count ?p60count ?p70count
+WHERE {
+	{SELECT (COUNT(?p) AS ?p10count)
+	WHERE {?p a schema:Patient; codo:age ?age.
+	FILTER(?age <= 10)}}
+	{SELECT (COUNT(?p) AS ?p20count)
+	WHERE {?p a schema:Patient; codo:age ?age.
+	FILTER(20 >= ?age && ?age > 10)}}
+	{SELECT (COUNT(?p) AS ?p30count)
+	WHERE {?p a schema:Patient; codo:age ?age.
+	FILTER(30 >= ?age && ?age > 20)}}
+	{SELECT (COUNT(?p) AS ?p40count)
+	WHERE {?p a schema:Patient; codo:age ?age.
+	FILTER(40 >= ?age && ?age > 30)}}
+	{SELECT (COUNT(?p) AS ?p50count)
+	WHERE {?p a schema:Patient; codo:age ?age.
+	FILTER(50 >= ?age && ?age > 40)}}
+	{SELECT (COUNT(?p) AS ?p60count)
+	WHERE {?p a schema:Patient; codo:age ?age.
+	FILTER(60 >= ?age && ?age > 50)}}
+	{SELECT (COUNT(?p) AS ?p70count)
+	WHERE {?p a schema:Patient; codo:age ?age.
+	FILTER(?age > 60)}}
+	}		
+       
+#List all patients who have a diagnosis	
+SELECT ?p ?d
+WHERE {?p codo:hasDiagnosis ?d.}
+
+#Competency questions from ontology:
+#How many people recovered from COVId-19 in place p until date t?
+#In this example data is June 1 2020 and place is  Bangalore-Urban
+SELECT ?pcount
+WHERE {
+	{SELECT (COUNT(?p) AS ?pcount)
+	WHERE {?p codo:status codo:Cured;
+			codo:isPermanentResidentOf codo:Bangalore-Urban;
+			codo:releasedOn ?rd.
+			FILTER(?rd <= "2020-06-01T00:00:00"^^xsd:dateTime)}}}
+
+#The same query only list the patient and the date ordered by date:
+SELECT ?p ?rd
+	WHERE {?p codo:status codo:Cured;
+			codo:isPermanentResidentOf codo:Bangalore-Urban;
+			codo:releasedOn ?rd.
+			FILTER(?rd <= "2020-06-01T00:00:00"^^xsd:dateTime)}
+			ORDER BY ?rd
+
+#How many people died in country c? Using India as example.
+SELECT ?pcount
+WHERE {
+	{SELECT (COUNT(?p) AS ?pcount)
+	WHERE {?p codo:status codo:Deceased;
+			codo:isPermanentResidentOf ?prp.
+			?prp codo:containedIn codo:India.}}}
+			
+#Give me the travel history of patient p? 
+#Note: used example of patient with state ID 100
+#to get other patients just substitute different ID. 			
+SELECT ?p ?tfp
+WHERE {?p codo:statePatientID "100";
+		codo:travelledFrom ?tfp.}
+							
+#Give me the COVID-19 patients and their relationship, if any.
+SELECT ?p ?pr
+WHERE {?p codo:hasRelationship ?pr.}
+ 
+#Give me the COVID-19 patients who are in family relationships.
+#Note: Need to run the Materializer on properties to get the proper results
+SELECT ?p ?pr
+WHERE {?p codo:hasFamilyMember ?pr.}
+
+ 
+#Give me the primary reasons for the maximum number of COVID-19 patients. 
+#Give me the most prevalent symtopms of Severe COVID-19.
+		
+			
+

@@ -1,0 +1,44 @@
+#This file has SWRL rules that were rewritten in SPARQL because Allegro doesn't support SWRL
+#Mild and Very Mild Diagnosis:
+#covid19:hasSymptom(?p, covid19:URTI) ^ covid19:hasSymptom(?p, covid19:Fever) ^ covid19:hasDiagnosis(?p, ?d) -> covid19:MildAndVeryMildCovid19(?d)
+
+#Moderate:
+#covid19:hasSymptom(?p, covid19:Pneumonia) ^ covid19:mostRecentTestResult(?p, ?tr) ^ covid19:respiratoryRate(?tr, ?r) ^ 
+#swrlb:greaterThanOrEqual(?r, 15) ^ covid19:hasDiagnosis(?p, ?d) -> covid19:ModerateCovid19(?d)
+
+#Severe:
+#covid19:hasSymptom(?p, covid19:SeverePneumonia) ^ covid19:mostRecentTestResult(?p, ?tr) ^ covid19:SpO2(?tr, ?sp) ^ 
+#covid19:respiratoryRate(?tr, ?r) ^ foaf:Person(?p) ^ covid19:hasDiagnosis(?p, ?d) ^ 
+#swrlb:greaterThanOrEqual(?r, 30) ^ swrlb:greaterThanOrEqual(?sp, 90) -> covid19:SevereCovid19(?d)
+
+
+INSERT {?d a codo:MildAndVeryMildCovid19.}
+WHERE {?p a schema:Patient;
+	codo:hasSymptom codo:URTI;
+	codo:hasSymptom codo:Fever;
+	codo:hasDiagnosis ?d.}
+
+INSERT {?d a codo:ModerateCovid19.}
+WHERE {?p a schema:Patient;
+	codo:hasSymptom codo:Pneumonia;
+	codo:mostRecentTestResult ?tr;
+	codo:hasDiagnosis ?d.
+	?tr codo:respiratoryRate ?r.
+	FILTER(?r >= 15)
+	}
+
+INSERT {?d a codo:SevereCovid19.}
+WHERE {?p a schema:Patient;
+	codo:hasSymptom codo:SeverePneumonia;
+	codo:mostRecentTestResult ?tr;
+	codo:hasDiagnosis ?d.
+	?tr codo:respiratoryRate ?r;
+	codo:SpO2 ?sp.
+	FILTER(?r >= 30 && ?sp >= 90)
+	}
+	
+	
+#List all patients who have a diagnosis	and mostRecentTestResult
+SELECT ?p ?d ?tr
+WHERE {?p codo:hasDiagnosis ?d;
+		codo:mostRecentTestResult ?tr.}
